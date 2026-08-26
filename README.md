@@ -61,20 +61,32 @@ gibt es nur die eine Aktion; eine Webseite kann der Anwendung also nichts unters
 
 ## Wie die Seite Erfolg und Fehlschlag auseinanderhält
 
-Ob eine Anwendung wirklich gestartet ist, kann eine Webseite nicht abfragen. Ein
-Anzeichen gibt es aber: **Verliert die Seite den Fokus, hat der Browser nachgefragt** –
-und nachfragen tut er nur, wenn Windows das Schema kennt.
+Ob eine Anwendung wirklich gestartet ist, kann eine Webseite nicht abfragen. Sie muss sich
+an das halten, was beim Start tatsächlich geschieht:
 
-| Beobachtung                                   | Deutung                          | Was geschieht                       |
-|-----------------------------------------------|----------------------------------|-------------------------------------|
-| Fokus bleibt **länger als 2,5 s** weg          | Anwendung ist im Vordergrund     | Tab schließt sich                    |
-| Fokus kommt **schnell zurück**                 | Nachfrage wurde abgebrochen      | Anleitung, Hinweis auf die Nachfrage |
-| Fokus geht **gar nicht** weg                   | Schema unbekannt, keine Nachfrage| Anleitung, Hinweis auf die Einrichtung |
+1. Die Seite ruft `auftragsablage://start` auf.
+2. Der Browser fragt nach → **die Seite verliert den Fokus**.
+3. Der Benutzer bestätigt → **der Fokus kommt sofort zurück**.
+4. `cmd.exe`, PowerShell, Auspacken, Abgleich mit dem Ablageordner, Webserver starten →
+   **das dauert Sekunden bis Minuten**.
+5. Die Anwendung öffnet ihren eigenen Browsertab.
 
-Die Wartezeit von 2,5 s trennt beides: Wer die Nachfrage abbricht, ist vorher zurück.
-Eine Vermutung bleibt es trotzdem – deshalb wird der Erfolg immer erst *angezeigt* und
-das Fenster erst danach geschlossen. Scheitert das Schließen, steht die Seite mit der
-Meldung „Auftragsablage läuft“ da und niemand verliert die Anleitung.
+Schritt 3 ist die Falle: Der zurückkehrende Fokus sieht aus wie ein Abbruch, ist aber das
+Gegenteil. Der Fokus taugt darum nicht als Erfolgsmerkmal – wohl aber **die Nachfrage aus
+Schritt 2**, denn die kommt nur, wenn Windows das Schema kennt.
+
+| Beobachtung                                        | Deutung                            | Was geschieht                          |
+|----------------------------------------------------|------------------------------------|----------------------------------------|
+| Keine Nachfrage innerhalb 3,5 s                     | Schema unbekannt                   | Anleitung zur Einrichtung               |
+| Nachfrage kam, Tab wird **verdeckt**                | Anwendung hat ihren Tab geöffnet   | Tab schließt sich                       |
+| Nachfrage kam, Fokus **12 s am Stück** weg          | Anwendung in einem anderen Fenster | Tab schließt sich                       |
+| Nachfrage kam, nach 45 s immer noch nichts          | abgebrochen *oder* sehr langsam    | Anleitung, beide Möglichkeiten benannt  |
+
+Nach neun Sekunden sagt die Seite von sich aus, dass der erste Start länger dauert –
+ohne dieses Wort wirkt die Stille wie ein Fehlschlag.
+
+Ob abgebrochen oder nur langsam, lässt sich von außen nicht unterscheiden. Die Seite rät
+deshalb nicht, sondern nennt beides.
 
 ### Das Schließen hat eine Grenze
 
@@ -88,6 +100,13 @@ keinen eigenen Verlauf angesammelt haben**. Praktisch heißt das:
 **Empfehlung:** Den Link in SharePoint so eintragen, dass er in einem neuen Tab öffnet.
 Der Aufruf von `auftragsablage://start` legt selbst keinen Verlaufseintrag an – das wurde
 nachgemessen –, ein frisch geöffneter Tab bleibt also schließbar.
+
+### Wenn der Standardbrowser ein anderer ist
+
+Die Anwendung öffnet ihre Oberfläche über `Start-Process` – also im **Standardbrowser**.
+Ist das ein anderer als der, in dem der SharePoint-Link angeklickt wurde, wird der Tab
+dieser Seite nie verdeckt. Dann greift die Frist über den Fokus (12 s), und die Seite
+schließt sich trotzdem.
 
 ## Auftragsablage.cmd zum Herunterladen anbieten
 
