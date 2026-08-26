@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auftragsablage starten</title>
+<link rel="icon" href="logo-weisstechnik.png">
+<meta name="robots" content="noindex">
+<style>
+/* ----------------------------------------------------------------------------
+   Auftragsablage - Startseite fuer den SharePoint-Link
+
+   Die Farben und Abstaende sind aus der Anwendung uebernommen, damit der Uebergang
+   nicht auffaellt. Alles steht in dieser einen Datei: In der Firmenumgebung ist
+   nicht gesagt, dass eine Seite von GitHub Pages Schriften oder Skripte von
+   anderen Adressen nachladen darf.
+   ---------------------------------------------------------------------------- */
+:root {
+  --tinte:        #00204E;
+  --tinte-hell:   #0b3a72;
+  --tinte-matt:   #335076;
+  --signal:       #9AA302;
+  --papier:       #ffffff;
+  --raster:       #eef1f4;
+  --raster-tief:  #e3e8ed;
+  --linie:        #d3dae1;
+  --graphit:      #16202b;
+  --graphit-matt: #55636f;
+  --gelb:         #8a5a00;
+  --gelb-flaeche: #fdf4e3;
+  --blau:         #1d4f8f;
+  --blau-flaeche: #e9f0f9;
+  --schrift: "Segoe UI", system-ui, -apple-system, sans-serif;
+  --kante: 2px;
+}
+
+* { box-sizing: border-box; }
+
+/* Die Vorgabe des Browsers fuer [hidden] ist display:none - eine eigene
+   display-Angabe in einer Klassenregel schlaegt sie jedoch. Genau das war hier
+   der Fall: Die Laufanzeige ist inline-flex und blieb trotz hidden stehen. */
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  font-family: var(--schrift);
+  color: var(--graphit);
+  background: var(--raster);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- Kopf ------------------------------------------------------------------ */
+.kopf {
+  /* Dunkler Grund wie in der Anwendung: Das Logo ist weiss und waere auf
+     hellem Grund unsichtbar. */
+  background: var(--tinte);
+  border-bottom: 3px solid var(--signal);
+}
+.kopf-inhalt {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+.marke-logo { height: 2.5rem; width: auto; display: block; }
+.marke-trenner {
+  width: 1px;
+  height: 2rem;
+  flex: none;
+  background: rgba(255, 255, 255, .26);
+}
+.marke-titel {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+  color: #fff;
+}
+.marke-unter {
+  margin: .0625rem 0 0;
+  font-size: .8125rem;
+  color: rgba(255, 255, 255, .68);
+}
+
+/* --- Karte ----------------------------------------------------------------- */
+main {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 3rem;
+}
+.karte {
+  background: var(--papier);
+  border: 1px solid var(--linie);
+  border-top: var(--kante) solid var(--tinte);
+  padding: 2.25rem 2rem;
+  text-align: center;
+}
+h2 {
+  margin: 0 0 .5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--tinte);
+  letter-spacing: -.01em;
+}
+.unterzeile {
+  margin: 0 auto 1.75rem;
+  max-width: 30rem;
+  color: var(--graphit-matt);
+  font-size: .9375rem;
+}
+
+/* --- Laufanzeige ----------------------------------------------------------- */
+.lauf {
+  display: inline-flex;
+  align-items: center;
+  gap: .625rem;
+  margin-bottom: 1.5rem;
+  color: var(--tinte-matt);
+  font-size: .875rem;
+}
+.kreisel {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--raster-tief);
+  border-top-color: var(--tinte);
+  border-radius: 50%;
+  animation: dreh .8s linear infinite;
+  flex: none;
+}
+@keyframes dreh { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .kreisel { animation-duration: 2.4s; }
+}
+
+/* --- Knopf ----------------------------------------------------------------- */
+.knopf {
+  display: inline-block;
+  padding: .75rem 1.75rem;
+  background: var(--tinte);
+  color: var(--papier);
+  border: var(--kante) solid var(--tinte);
+  font: inherit;
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+.knopf:hover  { background: var(--tinte-hell); border-color: var(--tinte-hell); }
+.knopf:active { transform: translateY(1px); }
+.knopf:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
+
+.nachsatz {
+  margin: 1.25rem 0 0;
+  font-size: .8125rem;
+  color: var(--graphit-matt);
+}
+
+/* --- Hilfe ----------------------------------------------------------------- */
+/* Erscheint erst, wenn sich nach ein paar Sekunden nichts geruehrt hat. Ob der
+   Start wirklich fehlgeschlagen ist, kann eine Webseite nicht sicher feststellen -
+   deshalb steht hier eine Frage und keine Fehlermeldung. */
+.hilfe {
+  margin-top: 2rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--linie);
+  text-align: left;
+}
+.hilfe[hidden] { display: none; }
+.hilfe h3 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  color: var(--tinte);
+}
+.schritte {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: schritt;
+}
+.schritte li {
+  counter-increment: schritt;
+  position: relative;
+  padding-left: 2.25rem;
+  margin-bottom: 1rem;
+  font-size: .9375rem;
+}
+.schritte li::before {
+  content: counter(schritt);
+  position: absolute;
+  left: 0;
+  top: .0625rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: grid;
+  place-items: center;
+  background: var(--raster);
+  border: 1px solid var(--linie);
+  color: var(--tinte);
+  font-size: .8125rem;
+  font-weight: 700;
+}
+.schritte strong { color: var(--graphit); }
+code {
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: .875em;
+  background: var(--raster);
+  border: 1px solid var(--linie);
+  padding: .0625rem .3125rem;
+}
+
+.merker {
+  margin-top: 1.25rem;
+  padding: .875rem 1rem;
+  background: var(--blau-flaeche);
+  border-left: 3px solid var(--blau);
+  font-size: .875rem;
+  color: var(--graphit);
+}
+.merker--warnung {
+  background: var(--gelb-flaeche);
+  border-left-color: var(--gelb);
+}
+
+footer {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 0 1.5rem 2.5rem;
+  font-size: .8125rem;
+  color: var(--graphit-matt);
+  text-align: center;
+}
+
+@media (max-width: 34rem) {
+  .karte { padding: 1.75rem 1.25rem; }
+  .kopf-inhalt { padding: 1rem; gap: .75rem; }
+  .marke-trenner { display: none; }
+  .marke-logo { height: 1.9rem; }
+  .marke-titel { font-size: .9375rem; }
+  h2 { font-size: 1.25rem; }
+  .knopf { display: block; width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<header class="kopf">
+  <div class="kopf-inhalt">
+    <img class="marke-logo" src="logo-weisstechnik.png" alt="Weiss Technik">
+    <span class="marke-trenner" aria-hidden="true"></span>
+    <div>
+      <h1 class="marke-titel">Auftragsablage WKT Air Solutions</h1>
+      <p class="marke-unter">Dokumentupload, Analyse und SharePoint-Ablage in einem Vorgang</p>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="karte">
+    <h2 id="titel">Auftragsablage wird gestartet …</h2>
+    <p class="unterzeile" id="unterzeile">
+      Ihr Browser fragt gleich, ob er die Anwendung öffnen darf. Bitte bestätigen –
+      danach läuft die Auftragsablage in einem eigenen Fenster.
+    </p>
+
+    <p class="lauf" id="lauf">
+      <span class="kreisel" aria-hidden="true"></span>
+      <span>Start wird ausgelöst …</span>
+    </p>
+
+    <p>
+      <a class="knopf" id="knopf" href="auftragsablage://start">Auftragsablage starten</a>
+    </p>
+
+    <p class="nachsatz" id="nachsatz">
+      Passiert nichts? Dann klicken Sie den Knopf noch einmal an.
+    </p>
+
+    <section class="hilfe" id="hilfe" hidden>
+      <h3>Es tut sich nichts?</h3>
+      <ol class="schritte">
+        <li>
+          <strong>Nachfrage des Browsers bestätigen.</strong>
+          Beim ersten Mal erscheint ein kleines Fenster mit der Frage
+          „Auftragsablage öffnen?“. Erst wenn Sie das bestätigen, startet die Anwendung.
+        </li>
+        <li>
+          <strong>Auftragsablage einmal von Hand starten.</strong>
+          Auf einem Rechner, auf dem die Anwendung noch nie gelaufen ist, kennt Windows
+          diesen Link noch nicht. Führen Sie dazu <code>Auftragsablage.cmd</code>
+          einmal per Doppelklick aus – Sie finden die Datei in SharePoint neben diesem
+          Link. Danach funktioniert der Link dauerhaft.
+        </li>
+        <li>
+          <strong>Diese Seite neu laden.</strong>
+          Nach dem ersten Start genügt ein Klick auf den Knopf oben.
+        </li>
+      </ol>
+
+      <p class="merker">
+        Der Link öffnet die Anwendung auf <strong>Ihrem eigenen Rechner</strong> –
+        er lädt nichts aus dem Internet. Deshalb muss die Auftragsablage dort einmal
+        eingerichtet worden sein.
+      </p>
+    </section>
+
+    <section class="hilfe" id="rahmenhinweis" hidden>
+      <h3>In diesem Fenster geht es nicht weiter</h3>
+      <p class="merker merker--warnung" style="margin-top:0">
+        Die Seite ist gerade in SharePoint eingebettet. Anwendungen lassen sich von dort
+        aus nicht starten. Bitte öffnen Sie die Seite in einem eigenen Tab:
+      </p>
+      <p style="text-align:center">
+        <a class="knopf" id="rahmenknopf" href="#" target="_blank" rel="noopener">
+          In neuem Tab öffnen
+        </a>
+      </p>
+    </section>
+  </div>
+</main>
+
+<footer>
+  Auftragsablage WKT Air Solutions · Air Solutions AV
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  // Fuer dieses Schema gibt es nur die eine Aktion. Die Adresse wird beim Start
+  // ohnehin nicht weitergereicht - so kann eine Webseite der Anwendung keine
+  // zusaetzlichen Befehle unterschieben.
+  var ZIEL = 'auftragsablage://start';
+
+  // So lange wird gewartet, bevor die Hilfe erscheint. Kuerzer waere unfair: Der
+  // Nachfragedialog des Browsers braucht einen Moment, und wer ihn liest, braucht
+  // laenger.
+  var WARTEZEIT = 3500;
+
+  var knopf     = document.getElementById('knopf');
+  var lauf      = document.getElementById('lauf');
+  var hilfe     = document.getElementById('hilfe');
+  var titel     = document.getElementById('titel');
+  var unterzeile = document.getElementById('unterzeile');
+  var nachsatz  = document.getElementById('nachsatz');
+
+  var gestartet = false;   // Der Browser hat den Fokus abgegeben - da tut sich etwas.
+  var uhr = null;
+
+  // --- In SharePoint eingebettet? -------------------------------------------
+  // Aus einem eingebetteten Rahmen heraus laesst sich kein Programm starten; der
+  // Browser unterbindet das. Statt es zu versuchen und stumm zu scheitern, wird
+  // hier gleich der Weg in einen eigenen Tab angeboten.
+  var imRahmen = false;
+  try { imRahmen = (window.self !== window.top); } catch (e) { imRahmen = true; }
+
+  if (imRahmen) {
+    document.getElementById('rahmenknopf').href = window.location.href;
+    document.getElementById('rahmenhinweis').hidden = false;
+    lauf.hidden = true;
+    titel.textContent = 'Auftragsablage starten';
+    unterzeile.textContent = 'Diese Seite muss in einem eigenen Tab geöffnet werden.';
+    knopf.hidden = true;
+    nachsatz.hidden = true;
+    return;
+  }
+
+  // --- Hat der Start gegriffen? ---------------------------------------------
+  // Sicher feststellen laesst sich das nicht. Wenn Windows den Nachfragedialog
+  // zeigt oder die Anwendung in den Vordergrund kommt, verliert diese Seite aber
+  // den Fokus - das ist das beste verfuegbare Anzeichen.
+  function merkeStart() {
+    gestartet = true;
+    if (uhr) { window.clearTimeout(uhr); uhr = null; }
+    lauf.hidden = true;
+    titel.textContent = 'Auftragsablage läuft';
+    unterzeile.textContent = 'Sie können dieses Fenster jetzt schließen.';
+  }
+
+  window.addEventListener('blur', merkeStart);
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden') { merkeStart(); }
+  });
+
+  function hilfeZeigen() {
+    if (gestartet) { return; }
+    lauf.hidden = true;
+    hilfe.hidden = false;
+    titel.textContent = 'Auftragsablage starten';
+    unterzeile.textContent = 'Der Start ist offenbar nicht durchgekommen.';
+    nachsatz.hidden = true;
+  }
+
+  // Nur die Anzeige - der Start selbst steht bewusst daneben.
+  function anzeigeZuruecksetzen() {
+    lauf.hidden = false;
+    hilfe.hidden = true;
+    nachsatz.hidden = false;
+    if (uhr) { window.clearTimeout(uhr); }
+    uhr = window.setTimeout(hilfeZeigen, WARTEZEIT);
+  }
+
+  // Der Knopf ist und bleibt ein gewoehnlicher Hyperlink: Den Start uebernimmt der
+  // Browser selbst, nicht dieses Skript. Kein preventDefault - so oeffnet der Knopf
+  // die Anwendung auch dann noch, wenn hier etwas schiefgeht. Die Behandlung setzt
+  // allein die Anzeige zurueck, damit die Wartezeit von vorn laeuft.
+  knopf.addEventListener('click', function () {
+    anzeigeZuruecksetzen();
+  });
+
+  // Von selbst starten, sobald die Seite steht: Wer auf den Link in SharePoint
+  // geklickt hat, will die Anwendung - kein zweiter Klick noetig. Ein Schema, das
+  // auf diesem Rechner niemand kennt, laesst der Browser einfach fallen; die Seite
+  // bleibt stehen und bietet unten den Knopf an.
+  window.setTimeout(function () {
+    anzeigeZuruecksetzen();
+    try { window.location.href = ZIEL; }
+    catch (e) { hilfeZeigen(); }
+  }, 250);
+})();
+</script>
+
+</body>
+</html>
