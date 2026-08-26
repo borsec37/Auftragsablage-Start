@@ -243,12 +243,9 @@ code {
   padding: .0625rem .3125rem;
 }
 
-.bezug { display: block; margin-top: .875rem; }
-.knopf-klein {
-  padding: .5rem 1.125rem;
-  font-size: .875rem;
-  border-width: 1px;
-}
+.einzelpunkt-text { margin: 0 0 1rem; font-size: .9375rem; }
+.bezugsquelle { margin: 0; font-size: .9375rem; }
+.bezug { display: block; margin-top: .25rem; }
 .bezug-nachsatz {
   display: block;
   margin-top: .625rem;
@@ -344,32 +341,46 @@ footer {
     <section class="hilfe" id="hilfe" hidden>
       <h3>Es tut sich nichts?</h3>
       <p class="hilfegrund" id="hilfegrund"></p>
-      <ol class="schritte">
+
+      <!-- Fehlt die Anwendung, gibt es genau eine Sache zu tun. Weitere Punkte
+           daneben lenken nur davon ab. -->
+      <div class="einzelpunkt" id="hilfeFehlt" hidden>
+        <p class="einzelpunkt-text">
+          <strong>Auftragsablage herunterladen und öffnen.</strong>
+          Unten auf den Link zum Herunterladen drücken, dann oben im Browser auf den
+          Download-Knopf und die Datei öffnen. Danach funktioniert dieser Link dauerhaft.
+        </p>
+        <p class="bezugsquelle" id="bezugsquelle">
+          Sie finden die Datei in SharePoint neben diesem Link.
+        </p>
+        <div class="bezug" id="bezug" hidden>
+          <a class="knopf" id="bezugknopf" href="#" target="_blank" rel="noopener">
+            Auftragsablage herunterladen
+          </a>
+          <span class="bezug-nachsatz">
+            Am reibungslosesten geht es ohne Herunterladen: Liegt die Bibliothek bereits
+            als Ordner im Explorer, dort einfach doppelklicken – dann meldet sich Windows
+            nicht mit einer Sicherheitswarnung.
+          </span>
+        </div>
+      </div>
+
+      <!-- Die Anwendung ist da, meldet sich aber nicht. Herunterladen hilft hier
+           nicht weiter - diese drei Punkte schon. -->
+      <ol class="schritte" id="hilfeStumm" hidden>
         <li>
           <strong>Nachfrage des Browsers bestätigen.</strong>
           Beim ersten Mal erscheint ein kleines Fenster mit der Frage
           „Auftragsablage öffnen?“. Erst wenn Sie das bestätigen, startet die Anwendung.
         </li>
         <li>
-          <strong>Auftragsablage einmal von Hand starten.</strong>
-          Auf einem Rechner, auf dem die Anwendung noch nie gelaufen ist, kennt Windows
-          diesen Link noch nicht. Führen Sie dazu <code>Auftragsablage.cmd</code>
-          einmal per Doppelklick aus. Danach funktioniert der Link dauerhaft.
-          <span id="bezugsquelle">Sie finden die Datei in SharePoint neben diesem Link.</span>
-          <span class="bezug" id="bezug" hidden>
-            <a class="knopf knopf-klein" id="bezugknopf" href="#" target="_blank" rel="noopener">
-              Auftragsablage.cmd herunterladen
-            </a>
-            <span class="bezug-nachsatz">
-              Am reibungslosesten geht es ohne Herunterladen: Liegt die Bibliothek bereits
-              als Ordner im Explorer, dort einfach doppelklicken – dann meldet sich Windows
-              nicht mit einer Sicherheitswarnung.
-            </span>
-          </span>
+          <strong>Andere Browserfenster ansehen.</strong>
+          Die Auftragsablage öffnet sich in Ihrem Standardbrowser – das muss nicht
+          derselbe sein, in dem Sie gerade lesen.
         </li>
         <li>
-          <strong>Diese Seite neu laden.</strong>
-          Nach dem ersten Start genügt ein Klick auf den Knopf oben.
+          <strong>Noch einmal versuchen.</strong>
+          Ein Klick auf den Knopf oben startet den Vorgang von vorn.
         </li>
       </ol>
 
@@ -554,7 +565,14 @@ footer {
     hilfe.hidden = false;
     titel.textContent = 'Auftragsablage starten';
 
-    if (grund === 'ohneNachfrage') {
+    // Die beiden Ursachen brauchen Verschiedenes. Fehlt die Anwendung, gibt es genau
+    // eine Sache zu tun - dann steht auch nur die da. Ist sie vorhanden und meldet
+    // sich bloss nicht, hilft Herunterladen nicht weiter.
+    var fehlt = (grund === 'ohneNachfrage');
+    el('hilfeFehlt').hidden = !fehlt;
+    el('hilfeStumm').hidden = fehlt;
+
+    if (fehlt) {
       unterzeile.textContent = 'Windows kennt diesen Link auf dem Rechner noch nicht.';
       hilfegrund.textContent = 'Es kam keine Nachfrage des Browsers. Das spricht dafür, dass die ' +
                                'Auftragsablage auf diesem Rechner noch nicht eingerichtet ist.';
@@ -566,8 +584,7 @@ footer {
       unterzeile.textContent = 'Von der Anwendung ist noch nichts zu sehen.';
       hilfegrund.textContent = 'Der Browser hat nachgefragt – die Auftragsablage hat sich seither ' +
                                'aber nicht gemeldet. Entweder wurde die Nachfrage nicht bestätigt, ' +
-                               'oder sie öffnet gerade in einem anderen Fenster. Prüfen Sie zuerst ' +
-                               'Ihre übrigen Browserfenster.';
+                               'oder sie öffnet gerade in einem anderen Fenster.';
     }
   }
 
