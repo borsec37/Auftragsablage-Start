@@ -20,6 +20,7 @@
   --tinte-hell:   #0b3a72;
   --tinte-matt:   #335076;
   --signal:       #9AA302;
+  --signal-tief:  #5F6B00;
   --papier:       #ffffff;
   --raster:       #eef1f4;
   --raster-tief:  #e3e8ed;
@@ -160,6 +161,14 @@ h2 {
   color: var(--graphit-matt);
 }
 
+/* --- Erfolg ---------------------------------------------------------------- */
+.erfolg-haken {
+  margin: 0 0 1.5rem;
+  font-size: 2.5rem;
+  line-height: 1;
+  color: var(--signal-tief);
+}
+
 /* --- Hilfe ----------------------------------------------------------------- */
 /* Erscheint erst, wenn sich nach ein paar Sekunden nichts geruehrt hat. Ob der
    Start wirklich fehlgeschlagen ist, kann eine Webseite nicht sicher feststellen -
@@ -172,10 +181,18 @@ h2 {
 }
 .hilfe[hidden] { display: none; }
 .hilfe h3 {
-  margin: 0 0 1rem;
+  margin: 0 0 .5rem;
   font-size: 1rem;
   color: var(--tinte);
 }
+/* Sagt, woran die Seite den Fehlschlag erkannt hat - das trennt die beiden
+   Ursachen, die sonst gleich aussehen: gar nicht eingerichtet oder abgebrochen. */
+.hilfegrund {
+  margin: 0 0 1.25rem;
+  font-size: .9375rem;
+  color: var(--graphit-matt);
+}
+.hilfegrund:empty { display: none; }
 .schritte {
   margin: 0;
   padding: 0;
@@ -280,8 +297,20 @@ footer {
       Passiert nichts? Dann klicken Sie den Knopf noch einmal an.
     </p>
 
+    <section class="erfolg" id="erfolg" hidden>
+      <p class="erfolg-haken" aria-hidden="true">&#10003;</p>
+      <p>
+        <button class="knopf" type="button" id="schliessknopf">Dieses Fenster schließen</button>
+      </p>
+      <p class="nachsatz" id="schliesshinweis" hidden>
+        Ihr Browser lässt das Schließen von hier aus nicht zu – bitte schließen Sie
+        den Tab von Hand.
+      </p>
+    </section>
+
     <section class="hilfe" id="hilfe" hidden>
       <h3>Es tut sich nichts?</h3>
+      <p class="hilfegrund" id="hilfegrund"></p>
       <ol class="schritte">
         <li>
           <strong>Nachfrage des Browsers bestätigen.</strong>
@@ -336,20 +365,33 @@ footer {
   // zusaetzlichen Befehle unterschieben.
   var ZIEL = 'auftragsablage://start';
 
-  // So lange wird gewartet, bevor die Hilfe erscheint. Kuerzer waere unfair: Der
-  // Nachfragedialog des Browsers braucht einen Moment, und wer ihn liest, braucht
-  // laenger.
-  var WARTEZEIT = 3500;
+  // Bis entschieden wird, ob der Start durchgekommen ist. Kuerzer waere unfair:
+  // Der Nachfragedialog des Browsers braucht einen Moment, und wer ihn liest,
+  // braucht laenger.
+  var WARTEZEIT = 3000;
 
-  var knopf     = document.getElementById('knopf');
-  var lauf      = document.getElementById('lauf');
-  var hilfe     = document.getElementById('hilfe');
-  var titel     = document.getElementById('titel');
-  var unterzeile = document.getElementById('unterzeile');
-  var nachsatz  = document.getElementById('nachsatz');
+  // So lange muss der Fokus am Stueck weg sein, bevor die Seite sich schliesst.
+  // Kommt er vorher zurueck, war es die Nachfrage des Browsers und nicht die
+  // gestartete Anwendung.
+  var SCHLIESSEN_NACH = 2500;
 
-  var gestartet = false;   // Der Browser hat den Fokus abgegeben - da tut sich etwas.
-  var uhr = null;
+  function el(id) { return document.getElementById(id); }
+
+  var knopf        = el('knopf');
+  var lauf         = el('lauf');
+  var hilfe        = el('hilfe');
+  var hilfegrund   = el('hilfegrund');
+  var erfolg       = el('erfolg');
+  var titel        = el('titel');
+  var unterzeile   = el('unterzeile');
+  var nachsatz     = el('nachsatz');
+  var schliessknopf = el('schliessknopf');
+  var schliesshinweis = el('schliesshinweis');
+
+  var zustand = 'laeuft';       // laeuft | erfolg | hilfe
+  var fokusWarWeg = false;      // Hat der Browser ueberhaupt nachgefragt?
+  var uhrEntscheidung = null;
+  var uhrSchliessen = null;
 
   // --- In SharePoint eingebettet? -------------------------------------------
   // Aus einem eingebetteten Rahmen heraus laesst sich kein Programm starten; der
@@ -359,49 +401,142 @@ footer {
   try { imRahmen = (window.self !== window.top); } catch (e) { imRahmen = true; }
 
   if (imRahmen) {
-    document.getElementById('rahmenknopf').href = window.location.href;
-    document.getElementById('rahmenhinweis').hidden = false;
+    el('rahmenknopf').href = window.location.href;
+    el('rahmenhinweis').hidden = false;
     lauf.hidden = true;
-    titel.textContent = 'Auftragsablage starten';
-    unterzeile.textContent = 'Diese Seite muss in einem eigenen Tab geöffnet werden.';
     knopf.hidden = true;
     nachsatz.hidden = true;
+    titel.textContent = 'Auftragsablage starten';
+    unterzeile.textContent = 'Diese Seite muss in einem eigenen Tab geöffnet werden.';
     return;
   }
 
-  // --- Hat der Start gegriffen? ---------------------------------------------
-  // Sicher feststellen laesst sich das nicht. Wenn Windows den Nachfragedialog
-  // zeigt oder die Anwendung in den Vordergrund kommt, verliert diese Seite aber
-  // den Fokus - das ist das beste verfuegbare Anzeichen.
-  function merkeStart() {
-    gestartet = true;
-    if (uhr) { window.clearTimeout(uhr); uhr = null; }
-    lauf.hidden = true;
-    titel.textContent = 'Auftragsablage läuft';
-    unterzeile.textContent = 'Sie können dieses Fenster jetzt schließen.';
+  function uhrenStoppen() {
+    if (uhrEntscheidung) { window.clearTimeout(uhrEntscheidung); uhrEntscheidung = null; }
+    if (uhrSchliessen)   { window.clearTimeout(uhrSchliessen);   uhrSchliessen = null; }
   }
 
-  window.addEventListener('blur', merkeStart);
-  document.addEventListener('visibilitychange', function () {
-    if (document.visibilityState === 'hidden') { merkeStart(); }
-  });
-
-  function hilfeZeigen() {
-    if (gestartet) { return; }
+  // --- Erfolg ---------------------------------------------------------------
+  function erfolgAnzeigen() {
+    if (zustand === 'erfolg') { return; }
+    zustand = 'erfolg';
+    uhrenStoppen();
     lauf.hidden = true;
+    hilfe.hidden = true;
+    knopf.hidden = true;
+    nachsatz.hidden = true;
+    erfolg.hidden = false;
+    titel.textContent = 'Auftragsablage läuft';
+    unterzeile.textContent = 'Die Anwendung ist geöffnet – dieses Fenster wird nicht mehr gebraucht.';
+  }
+
+  function schliessen() {
+    erfolgAnzeigen();
+
+    // Der Browser schliesst nur, was er selbst geoeffnet hat oder was noch keinen
+    // eigenen Verlauf angesammelt hat. Aus SharePoint heraus ist das der Regelfall,
+    // sicher ist es aber nicht. Klappt es nicht, bleibt die Seite eben stehen und
+    // sagt, dass sie zu kann - deshalb steht erfolgAnzeigen() schon davor.
+    window.close();
+    window.setTimeout(function () {
+      if (!window.closed) { schliesshinweis.hidden = false; }
+    }, 500);
+  }
+
+  // --- Fehlschlag -----------------------------------------------------------
+  function hilfeAnzeigen() {
+    if (zustand !== 'laeuft') { return; }
+    zustand = 'hilfe';
+    uhrenStoppen();
+    lauf.hidden = true;
+    nachsatz.hidden = true;
+    erfolg.hidden = true;
     hilfe.hidden = false;
     titel.textContent = 'Auftragsablage starten';
-    unterzeile.textContent = 'Der Start ist offenbar nicht durchgekommen.';
-    nachsatz.hidden = true;
+
+    // Zwei Ursachen, die man sonst nicht auseinanderhalten kann. Ob der Browser
+    // ueberhaupt nachgefragt hat, verraet sie: Kennt Windows das Schema nicht,
+    // laesst der Browser den Aufruf stillschweigend fallen - es gibt keinen Dialog
+    // und damit auch keinen Fokuswechsel.
+    if (fokusWarWeg) {
+      unterzeile.textContent = 'Der Start wurde abgebrochen.';
+      hilfegrund.textContent = 'Der Browser hat gefragt, ob er die Auftragsablage öffnen darf – ' +
+                               'die Nachfrage wurde nicht bestätigt.';
+    }
+    else {
+      unterzeile.textContent = 'Windows kennt diesen Link auf dem Rechner noch nicht.';
+      hilfegrund.textContent = 'Es kam keine Nachfrage des Browsers. Das spricht dafür, dass die ' +
+                               'Auftragsablage auf diesem Rechner noch nicht eingerichtet ist.';
+    }
   }
 
+  function entscheiden() {
+    if (zustand !== 'laeuft') { return; }
+
+    // Steht noch eine Entscheidung ueber den Erfolg aus, hat sie Vorrang. Ohne
+    // diese Abfrage haengt es an der Reihenfolge zweier Uhren, ob die Seite sich
+    // schliesst oder eine Fehlersuche anbietet - und die Reihenfolge verschiebt
+    // sich mit jeder Sekunde, die der Benutzer die Nachfrage offen stehen laesst.
+    if (uhrSchliessen) {
+      uhrEntscheidung = window.setTimeout(entscheiden, 300);
+      return;
+    }
+
+    // Liegt der Fokus gerade woanders, laeuft der Start noch - entweder steht die
+    // Nachfrage offen oder die Anwendung ist im Vordergrund. Dann ist jetzt nicht
+    // der Moment, eine Fehlersuche anzubieten.
+    if (!document.hasFocus()) {
+      uhrEntscheidung = window.setTimeout(entscheiden, 500);
+      return;
+    }
+    hilfeAnzeigen();
+  }
+
+  // --- Fokus beobachten -----------------------------------------------------
+  window.addEventListener('blur', function () {
+    if (zustand !== 'laeuft') { return; }
+    fokusWarWeg = true;
+    if (uhrSchliessen) { window.clearTimeout(uhrSchliessen); }
+    uhrSchliessen = window.setTimeout(function () {
+      if (zustand === 'laeuft') { schliessen(); }
+    }, SCHLIESSEN_NACH);
+  });
+
+  window.addEventListener('focus', function () {
+    // Der Fokus ist zurueck, bevor die Frist um war: Das war die Nachfrage des
+    // Browsers, nicht die Anwendung. Nicht schliessen.
+    if (uhrSchliessen) { window.clearTimeout(uhrSchliessen); uhrSchliessen = null; }
+  });
+
+  // Wird der Tab in den Hintergrund gelegt, waehrend der Start laeuft, zaehlt das
+  // ebenso: Auch so kommt eine gestartete Anwendung in den Vordergrund.
+  document.addEventListener('visibilitychange', function () {
+    if (zustand !== 'laeuft') { return; }
+    if (document.visibilityState === 'hidden') {
+      fokusWarWeg = true;
+      if (uhrSchliessen) { window.clearTimeout(uhrSchliessen); }
+      uhrSchliessen = window.setTimeout(function () {
+        if (zustand === 'laeuft') { schliessen(); }
+      }, SCHLIESSEN_NACH);
+    }
+  });
+
+  // --- Anzeige --------------------------------------------------------------
   // Nur die Anzeige - der Start selbst steht bewusst daneben.
   function anzeigeZuruecksetzen() {
+    zustand = 'laeuft';
+    fokusWarWeg = false;
+    uhrenStoppen();
     lauf.hidden = false;
     hilfe.hidden = true;
+    erfolg.hidden = true;
+    knopf.hidden = false;
     nachsatz.hidden = false;
-    if (uhr) { window.clearTimeout(uhr); }
-    uhr = window.setTimeout(hilfeZeigen, WARTEZEIT);
+    schliesshinweis.hidden = true;
+    titel.textContent = 'Auftragsablage wird gestartet …';
+    unterzeile.textContent = 'Ihr Browser fragt gleich, ob er die Anwendung öffnen darf. ' +
+                             'Bitte bestätigen – danach läuft die Auftragsablage in einem eigenen Fenster.';
+    uhrEntscheidung = window.setTimeout(entscheiden, WARTEZEIT);
   }
 
   // Der Knopf ist und bleibt ein gewoehnlicher Hyperlink: Den Start uebernimmt der
@@ -412,6 +547,13 @@ footer {
     anzeigeZuruecksetzen();
   });
 
+  schliessknopf.addEventListener('click', function () {
+    window.close();
+    window.setTimeout(function () {
+      if (!window.closed) { schliesshinweis.hidden = false; }
+    }, 500);
+  });
+
   // Von selbst starten, sobald die Seite steht: Wer auf den Link in SharePoint
   // geklickt hat, will die Anwendung - kein zweiter Klick noetig. Ein Schema, das
   // auf diesem Rechner niemand kennt, laesst der Browser einfach fallen; die Seite
@@ -419,7 +561,7 @@ footer {
   window.setTimeout(function () {
     anzeigeZuruecksetzen();
     try { window.location.href = ZIEL; }
-    catch (e) { hilfeZeigen(); }
+    catch (e) { hilfeAnzeigen(); }
   }, 250);
 })();
 </script>

@@ -54,13 +54,40 @@ braucht sie einmal – danach kennt Windows den Link.
 4. Windows führt den Befehl aus, der beim Einrichten unter
    `HKEY_CURRENT_USER\Software\Classes\auftragsablage` hinterlegt wurde – das ist die
    `Auftragsablage.cmd`. Sie sieht erst nach einer neueren Fassung und startet dann.
+5. Ist die Anwendung im Vordergrund, **schließt sich der Tab von selbst**.
 
 Die aufgerufene Adresse wird nicht an die Anwendung weitergereicht. Für dieses Schema
 gibt es nur die eine Aktion; eine Webseite kann der Anwendung also nichts unterschieben.
 
-Meldet sich nichts, blendet die Seite nach wenigen Sekunden eine kurze Anleitung ein.
-Ob der Start wirklich fehlgeschlagen ist, kann eine Webseite nicht sicher feststellen –
-deshalb steht dort eine Frage und keine Fehlermeldung.
+## Wie die Seite Erfolg und Fehlschlag auseinanderhält
+
+Ob eine Anwendung wirklich gestartet ist, kann eine Webseite nicht abfragen. Ein
+Anzeichen gibt es aber: **Verliert die Seite den Fokus, hat der Browser nachgefragt** –
+und nachfragen tut er nur, wenn Windows das Schema kennt.
+
+| Beobachtung                                   | Deutung                          | Was geschieht                       |
+|-----------------------------------------------|----------------------------------|-------------------------------------|
+| Fokus bleibt **länger als 2,5 s** weg          | Anwendung ist im Vordergrund     | Tab schließt sich                    |
+| Fokus kommt **schnell zurück**                 | Nachfrage wurde abgebrochen      | Anleitung, Hinweis auf die Nachfrage |
+| Fokus geht **gar nicht** weg                   | Schema unbekannt, keine Nachfrage| Anleitung, Hinweis auf die Einrichtung |
+
+Die Wartezeit von 2,5 s trennt beides: Wer die Nachfrage abbricht, ist vorher zurück.
+Eine Vermutung bleibt es trotzdem – deshalb wird der Erfolg immer erst *angezeigt* und
+das Fenster erst danach geschlossen. Scheitert das Schließen, steht die Seite mit der
+Meldung „Auftragsablage läuft“ da und niemand verliert die Anleitung.
+
+### Das Schließen hat eine Grenze
+
+Ein Browser schließt per Skript nur Fenster, die er selbst geöffnet hat **oder die noch
+keinen eigenen Verlauf angesammelt haben**. Praktisch heißt das:
+
+* **Link öffnet einen neuen Tab** → der Tab schließt sich von selbst. ✅
+* **Link öffnet im selben Tab** → das Schließen wird abgelehnt; die Seite zeigt stattdessen
+  „Auftragsablage läuft“ und bittet, den Tab zuzumachen.
+
+**Empfehlung:** Den Link in SharePoint so eintragen, dass er in einem neuen Tab öffnet.
+Der Aufruf von `auftragsablage://start` legt selbst keinen Verlaufseintrag an – das wurde
+nachgemessen –, ein frisch geöffneter Tab bleibt also schließbar.
 
 ## Grenzen
 
