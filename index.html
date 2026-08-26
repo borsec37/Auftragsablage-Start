@@ -161,6 +161,19 @@ h2 {
   color: var(--graphit-matt);
 }
 
+/* --- Probeansicht ---------------------------------------------------------- */
+/* Deutlich abgesetzt: Wer hier landet, soll nicht glauben, das sei der echte
+   Zustand seines Rechners. */
+.probeband {
+  margin: 0 0 1.75rem;
+  padding: .75rem 1rem;
+  background: var(--gelb-flaeche);
+  border-left: 3px solid var(--gelb);
+  font-size: .875rem;
+  text-align: left;
+}
+.probeband a { color: var(--tinte); }
+
 /* --- Erfolg ---------------------------------------------------------------- */
 .erfolg-haken {
   margin: 0 0 1.5rem;
@@ -291,6 +304,13 @@ footer {
 
 <main>
   <div class="karte">
+    <p class="probeband" id="probeband" hidden>
+      <strong>Probeansicht.</strong>
+      <span id="probetext"></span>
+      Es wurde nichts gestartet.
+      <a href="./">Zur normalen Seite</a>
+    </p>
+
     <h2 id="titel">Auftragsablage wird gestartet …</h2>
     <p class="unterzeile" id="unterzeile">
       Ihr Browser fragt gleich, ob er die Anwendung öffnen darf. Bitte bestätigen –
@@ -458,6 +478,21 @@ footer {
   var nachfrageGesehen = false;  // Hat der Browser ueberhaupt gefragt?
   var uhren = [];
 
+  // --- Probeansicht ---------------------------------------------------------
+  // Die Anleitung bekommt nur zu Gesicht, wer die Anwendung nicht hat - wer sie
+  // hat, kann also nicht nachsehen, was ein neuer Kollege liest. Mit '?probe=...'
+  // laesst sich jeder Zustand aufrufen, ohne etwas zu starten.
+  //
+  //   ?probe=fehlt   Anleitung zur Einrichtung (mit Knopf zum Herunterladen)
+  //   ?probe=stumm   Anleitung, wenn sich die Anwendung nicht meldet
+  //   ?probe=erfolg  Erfolgsanzeige
+  var probe = '';
+  try {
+    var treffer = /[?&]probe=([a-z]+)/i.exec(window.location.search);
+    if (treffer) { probe = treffer[1].toLowerCase(); }
+  }
+  catch (e) { probe = ''; }
+
   // --- In SharePoint eingebettet? -------------------------------------------
   // Aus einem eingebetteten Rahmen heraus laesst sich kein Programm starten; der
   // Browser unterbindet das. Statt es zu versuchen und stumm zu scheitern, wird
@@ -599,6 +634,7 @@ footer {
     knopf.hidden = false;
     nachsatz.hidden = false;
     schliesshinweis.hidden = true;
+    el('probeband').hidden = true;
     laufText.textContent = 'Start wird ausgelöst …';
     titel.textContent = 'Auftragsablage wird gestartet …';
     unterzeile.textContent = 'Ihr Browser fragt gleich, ob er die Anwendung öffnen darf. ' +
@@ -633,6 +669,22 @@ footer {
       if (!window.closed) { schliesshinweis.hidden = false; }
     }, 500);
   });
+
+  if (probe) {
+    var band = el('probeband');
+    el('probetext').textContent =
+      probe === 'erfolg' ? 'So sieht es aus, wenn die Anwendung geöffnet hat.'
+                         : 'So sieht die Seite aus, wenn der Start nicht durchkommt.';
+    band.hidden = false;
+
+    if (probe === 'erfolg') { erfolgAnzeigen(); }
+    else if (probe === 'stumm') { hilfeAnzeigen('keinLebenszeichen'); }
+    else { hilfeAnzeigen('ohneNachfrage'); }
+
+    // Der Knopf bleibt bedienbar - ein Klick startet dann wirklich.
+    knopf.hidden = false;
+    return;
+  }
 
   // Von selbst starten, sobald die Seite steht: Wer auf den Link in SharePoint
   // geklickt hat, will die Anwendung - kein zweiter Klick noetig.

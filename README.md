@@ -141,6 +141,37 @@ der Grund, warum hier eine interne Adresse stehen darf, obwohl die Seite öffent
 Der Knopf trägt bewusst **kein** `download`-Attribut: Bei einer fremden Adresse ignorieren
 Browser es. Was den Download auslöst, ist die Adresse selbst.
 
+### Nachsehen, was ein neuer Kollege liest
+
+Die Anleitung bekommt nur zu Gesicht, wer die Anwendung **nicht** hat – wer sie hat, sieht
+sie nie. Zum Nachschauen hängt man einen Parameter an die Adresse; dabei wird nichts
+gestartet, und ein deutliches Band oben sagt, dass es eine Probeansicht ist:
+
+| Adresse            | Zeigt                                                   |
+|--------------------|---------------------------------------------------------|
+| `?probe=fehlt`     | Anleitung zur Einrichtung – **mit dem Download-Knopf**    |
+| `?probe=stumm`     | Anleitung, wenn sich die Anwendung nicht meldet           |
+| `?probe=erfolg`    | die Erfolgsanzeige                                        |
+
+Also zum Beispiel:
+
+```
+https://borsec37.github.io/Auftragsablage-Start/?probe=fehlt
+```
+
+Der Startknopf bleibt dabei bedienbar – ein Klick startet dann wirklich.
+
+**Ganz echt nachstellen** geht auch, denn die Registrierung repariert sich bei jedem Start
+von selbst:
+
+```bat
+reg export HKCU\Software\Classes\auftragsablage "%USERPROFILE%\Desktop\auftragsablage.reg"
+reg delete HKCU\Software\Classes\auftragsablage /f
+```
+
+Danach verhält sich der Rechner wie einer ohne Auftragsablage. Zurück kommt der Eintrag
+durch einen Doppelklick auf `Auftragsablage.cmd` – oder über die gesicherte `.reg`-Datei.
+
 ### Warum der Explorer der bessere Weg bleibt
 
 Eine aus dem Browser heruntergeladene `.cmd` bekommt von Windows die Herkunftsmarkierung
