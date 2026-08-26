@@ -25,6 +25,7 @@
   --raster:       #eef1f4;
   --raster-tief:  #e3e8ed;
   --linie:        #d3dae1;
+  --linie-stark:  #a8b4c0;
   --graphit:      #16202b;
   --graphit-matt: #55636f;
   --gelb:         #8a5a00;
@@ -182,6 +183,16 @@ h2 {
   color: var(--signal-tief);
 }
 
+kbd {
+  font-family: var(--schrift);
+  font-size: .8125rem;
+  padding: .0625rem .375rem;
+  background: var(--papier);
+  border: 1px solid var(--linie-stark, var(--linie));
+  border-bottom-width: 2px;
+  color: var(--graphit);
+}
+
 /* --- Hilfe ----------------------------------------------------------------- */
 /* Erscheint erst, wenn sich nach ein paar Sekunden nichts geruehrt hat. Ob der
    Start wirklich fehlgeschlagen ist, kann eine Webseite nicht sicher feststellen -
@@ -327,8 +338,8 @@ footer {
         <button class="knopf" type="button" id="schliessknopf">Dieses Fenster schließen</button>
       </p>
       <p class="nachsatz" id="schliesshinweis" hidden>
-        Ihr Browser lässt das Schließen von hier aus nicht zu – bitte schließen Sie
-        den Tab von Hand.
+        Diesen Tab können Sie jetzt schließen – am schnellsten mit
+        <kbd>Strg</kbd> + <kbd>W</kbd>.
       </p>
     </section>
 
@@ -517,6 +528,15 @@ footer {
   }
 
   // --- Erfolg ---------------------------------------------------------------
+  // Ein Browser schliesst per Skript nur Fenster, die er selbst geoeffnet hat oder
+  // die noch keinen eigenen Verlauf angesammelt haben. Das laesst sich vorher
+  // absehen - und einen Knopf anzubieten, der nachweislich nichts tut, ist
+  // schlechter als zu sagen, wie es von Hand geht.
+  function kannSichSchliessen() {
+    try { return history.length <= 1; }
+    catch (e) { return false; }
+  }
+
   function erfolgAnzeigen() {
     if (zustand === 'erfolg') { return; }
     zustand = 'erfolg';
@@ -529,6 +549,10 @@ footer {
     titel.textContent = 'Auftragsablage läuft';
     unterzeile.textContent = 'Die Anwendung hat ein eigenes Fenster geöffnet – ' +
                              'dieses hier wird nicht mehr gebraucht.';
+
+    var geht = kannSichSchliessen();
+    schliessknopf.hidden = !geht;
+    schliesshinweis.hidden = geht;
   }
 
   function schliessen() {
@@ -539,7 +563,10 @@ footer {
     // stehen und sagt, dass sie zu kann - deshalb steht erfolgAnzeigen() davor.
     window.close();
     window.setTimeout(function () {
-      if (!window.closed) { schliesshinweis.hidden = false; }
+      if (!window.closed) {
+        schliessknopf.hidden = true;
+        schliesshinweis.hidden = false;
+      }
     }, 500);
   }
 
@@ -671,8 +698,13 @@ footer {
 
   schliessknopf.addEventListener('click', function () {
     window.close();
+    // Sollte die Einschaetzung oben doch danebengelegen haben, tritt hier die
+    // Anweisung an die Stelle des Knopfes - statt dass nichts geschieht.
     window.setTimeout(function () {
-      if (!window.closed) { schliesshinweis.hidden = false; }
+      if (!window.closed) {
+        schliessknopf.hidden = true;
+        schliesshinweis.hidden = false;
+      }
     }, 500);
   });
 
@@ -687,8 +719,10 @@ footer {
     else if (probe === 'stumm') { hilfeAnzeigen('keinLebenszeichen'); }
     else { hilfeAnzeigen('ohneNachfrage'); }
 
-    // Der Knopf bleibt bedienbar - ein Klick startet dann wirklich.
-    knopf.hidden = false;
+    // In den Fehlerbildern bleibt der Startknopf bedienbar - ein Klick startet dann
+    // wirklich. In der Erfolgsanzeige gehoert er nicht hin; dort ist nichts mehr zu
+    // starten, und die echte Seite zeigt ihn dort auch nicht.
+    knopf.hidden = (probe === 'erfolg');
     return;
   }
 

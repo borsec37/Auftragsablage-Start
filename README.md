@@ -94,8 +94,13 @@ Ein Browser schließt per Skript nur Fenster, die er selbst geöffnet hat **oder
 keinen eigenen Verlauf angesammelt haben**. Praktisch heißt das:
 
 * **Link öffnet einen neuen Tab** → der Tab schließt sich von selbst. ✅
-* **Link öffnet im selben Tab** → das Schließen wird abgelehnt; die Seite zeigt stattdessen
-  „Auftragsablage läuft“ und bittet, den Tab zuzumachen.
+* **Link öffnet im selben Tab** → das Schließen wird abgelehnt. Die Seite sieht das an
+  `history.length` **vorher** und bietet dann gar keinen Knopf an, sondern die Anweisung
+  „Diesen Tab können Sie jetzt schließen – am schnellsten mit Strg + W“. Ein Knopf, der
+  nachweislich nichts tut, ist schlechter als ein Satz, der weiterhilft.
+
+Nachgemessen: Weder `window.close()` noch der ältere Umweg `window.open('','_self').close()`
+kommt an dieser Regel vorbei.
 
 **Empfehlung:** Den Link in SharePoint so eintragen, dass er in einem neuen Tab öffnet.
 Der Aufruf von `auftragsablage://start` legt selbst keinen Verlaufseintrag an – das wurde
