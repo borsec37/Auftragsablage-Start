@@ -89,6 +89,67 @@ keinen eigenen Verlauf angesammelt haben**. Praktisch heißt das:
 Der Aufruf von `auftragsablage://start` legt selbst keinen Verlaufseintrag an – das wurde
 nachgemessen –, ein frisch geöffneter Tab bleibt also schließbar.
 
+## Auftragsablage.cmd zum Herunterladen anbieten
+
+Wer die Anwendung noch gar nicht hat, sieht in der Anleitung nur den Verweis „Sie finden
+die Datei in SharePoint neben diesem Link“. Daraus wird ein Knopf, sobald in `index.html`
+ganz oben im Skript eine Adresse hinterlegt ist:
+
+```js
+var DOWNLOAD = '';   // leer = nur der allgemeine Verweis
+```
+
+Aus SharePoint führen zwei Wege zu einer solchen Adresse:
+
+**1. Freigabelink mit `&download=1`** – Link der Datei kopieren („Link kopieren“) und den
+Zusatz anhängen. Ohne ihn öffnet sich erst die SharePoint-Ansicht statt des Downloads:
+
+```
+https://<tenant>.sharepoint.com/:u:/s/<Site>/<Kennung>?e=<...>&download=1
+```
+
+**2. Downloadadresse der Bibliothek** – unabhängig von einem Freigabelink, dafür muss der
+Bibliothekspfad stimmen:
+
+```
+https://<tenant>.sharepoint.com/sites/<Site>/_layouts/15/download.aspx?SourceUrl=/sites/<Site>/<Bibliothek>/Auftragsablage.cmd
+```
+
+Beides setzt voraus, dass der Benutzer an SharePoint angemeldet ist – im Haus ist er das
+üblicherweise. Wer keinen Zugriff hat, bekommt die Datei auch nicht; das ist so gewollt und
+der Grund, warum hier eine interne Adresse stehen darf, obwohl die Seite öffentlich ist.
+
+Der Knopf trägt bewusst **kein** `download`-Attribut: Bei einer fremden Adresse ignorieren
+Browser es. Was den Download auslöst, ist die Adresse selbst.
+
+### Warum der Explorer der bessere Weg bleibt
+
+Eine aus dem Browser heruntergeladene `.cmd` bekommt von Windows die Herkunftsmarkierung
+„aus dem Internet“. Beim Ausführen meldet sich dann SmartScreen mit „Der Computer wurde
+durch Windows geschützt“, und der Benutzer muss über *Weitere Informationen* → *Trotzdem
+ausführen* gehen. Manche Firmenrichtlinien unterbinden den Download ausführbarer Dateien
+ganz.
+
+Dieselbe Datei aus dem **synchronisierten Ordner im Explorer** trägt diese Markierung
+nicht – dort genügt ein Doppelklick. Deshalb nennt die Seite diesen Weg zuerst und den
+Download als Rückfall. Ob der Download in eurem Tenant überhaupt durchgeht, lässt sich nur
+vor Ort ausprobieren.
+
+## Veraltete Fassungen
+
+Dafür braucht die Seite nichts zu tun: `Auftragsablage.cmd` sieht bei **jedem** Start
+selbst nach, ob unter `<Ablageordner>\_Anwendung\` eine neuere Fassung liegt, und
+übernimmt sie, bevor die Anwendung öffnet – auch beim Start über diesen Link. Wer klickt,
+hat danach den aktuellen Stand.
+
+Nötig ist nur, die neue Fassung dort abzulegen; im Anwendungs-Repository erledigt das
+`tools/Veroeffentliche-Einzeldatei.ps1`.
+
+Eine Webseite könnte das ohnehin nicht prüfen: Sie sieht den Rechner nicht, und den
+lokalen Webserver der Anwendung darf sie nicht befragen – der Port wechselt, es braucht
+ein Sitzungsmerkmal, und Browser unterbinden Anfragen von öffentlichen Seiten an
+`127.0.0.1`.
+
 ## Grenzen
 
 * **Nur Windows.** Das Schema wird beim ersten Start der Auftragsablage eingetragen.

@@ -230,6 +230,19 @@ code {
   padding: .0625rem .3125rem;
 }
 
+.bezug { display: block; margin-top: .875rem; }
+.knopf-klein {
+  padding: .5rem 1.125rem;
+  font-size: .875rem;
+  border-width: 1px;
+}
+.bezug-nachsatz {
+  display: block;
+  margin-top: .625rem;
+  font-size: .8125rem;
+  color: var(--graphit-matt);
+}
+
 .merker {
   margin-top: 1.25rem;
   padding: .875rem 1rem;
@@ -321,8 +334,18 @@ footer {
           <strong>Auftragsablage einmal von Hand starten.</strong>
           Auf einem Rechner, auf dem die Anwendung noch nie gelaufen ist, kennt Windows
           diesen Link noch nicht. Führen Sie dazu <code>Auftragsablage.cmd</code>
-          einmal per Doppelklick aus – Sie finden die Datei in SharePoint neben diesem
-          Link. Danach funktioniert der Link dauerhaft.
+          einmal per Doppelklick aus. Danach funktioniert der Link dauerhaft.
+          <span id="bezugsquelle">Sie finden die Datei in SharePoint neben diesem Link.</span>
+          <span class="bezug" id="bezug" hidden>
+            <a class="knopf knopf-klein" id="bezugknopf" href="#" target="_blank" rel="noopener">
+              Auftragsablage.cmd herunterladen
+            </a>
+            <span class="bezug-nachsatz">
+              Am reibungslosesten geht es ohne Herunterladen: Liegt die Bibliothek bereits
+              als Ordner im Explorer, dort einfach doppelklicken – dann meldet sich Windows
+              nicht mit einer Sicherheitswarnung.
+            </span>
+          </span>
         </li>
         <li>
           <strong>Diese Seite neu laden.</strong>
@@ -360,6 +383,28 @@ footer {
 (function () {
   'use strict';
 
+  // ==========================================================================
+  //  HIER EINTRAGEN: Wo liegt die Auftragsablage.cmd?
+  //
+  //  Leer lassen, und die Seite verweist nur allgemein auf SharePoint. Steht hier
+  //  eine Adresse, erscheint in der Anleitung ein Knopf zum Herunterladen.
+  //
+  //  Aus SharePoint fuehren zwei Wege zu einer solchen Adresse:
+  //
+  //    1. Freigabelink der Datei kopieren und '&download=1' anhaengen. Ohne diesen
+  //       Zusatz oeffnet sich erst die SharePoint-Ansicht statt des Downloads.
+  //       https://<tenant>.sharepoint.com/:u:/s/<Site>/<Kennung>?e=<...>&download=1
+  //
+  //    2. Oder unmittelbar ueber die Downloadadresse der Bibliothek:
+  //       https://<tenant>.sharepoint.com/sites/<Site>/_layouts/15/download.aspx
+  //         ?SourceUrl=/sites/<Site>/<Bibliothek>/Auftragsablage.cmd
+  //
+  //  Beides setzt voraus, dass der Benutzer an SharePoint angemeldet ist - im
+  //  Haus ist er das ueblicherweise. Wer keinen Zugriff hat, bekommt die Datei
+  //  auch nicht; das ist so gewollt.
+  // ==========================================================================
+  var DOWNLOAD = '';
+
   // Fuer dieses Schema gibt es nur die eine Aktion. Die Adresse wird beim Start
   // ohnehin nicht weitergereicht - so kann eine Webseite der Anwendung keine
   // zusaetzlichen Befehle unterschieben.
@@ -387,6 +432,17 @@ footer {
   var nachsatz     = el('nachsatz');
   var schliessknopf = el('schliessknopf');
   var schliesshinweis = el('schliesshinweis');
+
+  // Ist eine Bezugsquelle hinterlegt, tritt der Knopf an die Stelle des allgemeinen
+  // Verweises. Kein download-Attribut: Bei einer fremden Adresse ignorieren Browser
+  // es ohnehin - was den Download ausloest, ist die Adresse selbst ('download=1'
+  // beziehungsweise download.aspx). In einem eigenen Tab, damit eine etwaige
+  // Anmeldung bei SharePoint diese Seite nicht verdraengt.
+  if (DOWNLOAD) {
+    el('bezugknopf').href = DOWNLOAD;
+    el('bezug').hidden = false;
+    el('bezugsquelle').hidden = true;
+  }
 
   var zustand = 'laeuft';       // laeuft | erfolg | hilfe
   var fokusWarWeg = false;      // Hat der Browser ueberhaupt nachgefragt?
