@@ -146,31 +146,23 @@ der Grund, warum hier eine interne Adresse stehen darf, obwohl die Seite öffent
 Der Knopf trägt bewusst **kein** `download`-Attribut: Bei einer fremden Adresse ignorieren
 Browser es. Was den Download auslöst, ist die Adresse selbst.
 
-### Wenn der Download-Link 404 liefert, obwohl die Datei da ist
+### Warum hier `download.aspx` steht und kein Freigabelink
 
-Kein Widerspruch – SharePoint antwortet auf einen **ungültigen oder veränderten**
-Freigabelink absichtlich mit 404 statt mit „Zugriff verweigert“, damit niemand durch
-Ausprobieren herausfinden kann, welche Dateien überhaupt existieren.
+Ein normaler „Link kopieren“-Freigabelink endet auf ein signiertes Token (`&e=<...>`),
+das kryptografisch an genau die Zeichenkette gebunden ist, mit der SharePoint es
+erzeugt hat. Wird danach noch etwas angehängt oder verändert, passt die Signatur nicht
+mehr – und SharePoint antwortet dann mit **404**, nicht mit „Zugriff verweigert“, damit
+niemand durch Ausprobieren herausfinden kann, welche Dateien überhaupt existieren.
+Genau das ist hier passiert und hat auf einen entsprechenden Bugreport hin zum Wechsel
+auf `download.aspx` geführt.
 
-Ein normaler Freigabelink endet auf `&e=<Token>` – dieses Token ist kryptografisch an
-genau die Zeichenkette gebunden, mit der SharePoint es erzeugt hat. Wird danach noch
-etwas angehängt (etwa `&download=1`), passt die Signatur nicht mehr, und SharePoint
-liefert 404, obwohl die Datei unverändert existiert.
-
-**Deshalb:** Den kopierten Freigabelink unverändert einsetzen, nichts anhängen. Für
-eine `.cmd`-Datei gibt es ohnehin keine Web-Vorschau – SharePoint bietet meist von
-selbst den Download an, auch ohne `download=1` oder `&web=1`.
-
-Bricht das trotzdem ab, ist die **`download.aspx`-Variante** die robustere Wahl, weil
-sie ohne signiertes Token auskommt – dafür muss der Bibliothekspfad exakt stimmen:
-
-```
-https://sgxs.sharepoint.com/sites/mts0344/_layouts/15/download.aspx?SourceUrl=/sites/mts0344/Auftraege/_Anwendung/Auftragsablage.cmd
-```
-
-Den Pfad am besten nicht selbst tippen, sondern in SharePoint bis zur Datei
-durchklicken und aus der Adresszeile kopieren – sonst genau derselbe Fehler, nur mit
-umgekehrter Ursache: ein Tippfehler statt eines kaputten Tokens, wieder 404.
+`download.aspx?SourceUrl=<Pfad>` kommt ohne jedes Token aus – dafür muss der
+**Bibliothekspfad exakt stimmen**. Am zuverlässigsten so ermittelt: in SharePoint bis
+zur Datei durchklicken, die Adresse aus der Adresszeile kopieren (sie sieht aus wie
+`.../AllItems.aspx?...&id=%2Fsites%2F...%2FAuftragsablage%2Ecmd&...`) und den Wert von
+`id=` URL-dekodieren – das ergibt den Pfad hinter `SourceUrl=`. Ihn selbst zu tippen,
+insbesondere bei Umlauten oder Sonderzeichen im Bibliotheksnamen, führt leicht zum
+selben 404, nur mit vertauschter Ursache: ein Tippfehler statt eines ungültigen Tokens.
 
 ### Nachsehen, was ein neuer Kollege liest
 
