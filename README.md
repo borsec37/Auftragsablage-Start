@@ -146,6 +146,32 @@ der Grund, warum hier eine interne Adresse stehen darf, obwohl die Seite öffent
 Der Knopf trägt bewusst **kein** `download`-Attribut: Bei einer fremden Adresse ignorieren
 Browser es. Was den Download auslöst, ist die Adresse selbst.
 
+### Wenn der Download-Link 404 liefert, obwohl die Datei da ist
+
+Kein Widerspruch – SharePoint antwortet auf einen **ungültigen oder veränderten**
+Freigabelink absichtlich mit 404 statt mit „Zugriff verweigert“, damit niemand durch
+Ausprobieren herausfinden kann, welche Dateien überhaupt existieren.
+
+Ein normaler Freigabelink endet auf `&e=<Token>` – dieses Token ist kryptografisch an
+genau die Zeichenkette gebunden, mit der SharePoint es erzeugt hat. Wird danach noch
+etwas angehängt (etwa `&download=1`), passt die Signatur nicht mehr, und SharePoint
+liefert 404, obwohl die Datei unverändert existiert.
+
+**Deshalb:** Den kopierten Freigabelink unverändert einsetzen, nichts anhängen. Für
+eine `.cmd`-Datei gibt es ohnehin keine Web-Vorschau – SharePoint bietet meist von
+selbst den Download an, auch ohne `download=1` oder `&web=1`.
+
+Bricht das trotzdem ab, ist die **`download.aspx`-Variante** die robustere Wahl, weil
+sie ohne signiertes Token auskommt – dafür muss der Bibliothekspfad exakt stimmen:
+
+```
+https://sgxs.sharepoint.com/sites/mts0344/_layouts/15/download.aspx?SourceUrl=/sites/mts0344/Auftraege/_Anwendung/Auftragsablage.cmd
+```
+
+Den Pfad am besten nicht selbst tippen, sondern in SharePoint bis zur Datei
+durchklicken und aus der Adresszeile kopieren – sonst genau derselbe Fehler, nur mit
+umgekehrter Ursache: ein Tippfehler statt eines kaputten Tokens, wieder 404.
+
 ### Nachsehen, was ein neuer Kollege liest
 
 Die Anleitung bekommt nur zu Gesicht, wer die Anwendung **nicht** hat – wer sie hat, sieht
